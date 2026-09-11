@@ -15,3 +15,11 @@ for n in range(int(i)):
 
 pontos_de_entrega.remove("R")
 menor_custo = float("inf")
+
+for poss in list(permutations(pontos_de_entrega)): 
+    custo_atual = 0 
+    indice_rota = 0 
+    poss = list(poss)  
+    poss.append("R") 
+    poss.insert(0, "R") 
+    
