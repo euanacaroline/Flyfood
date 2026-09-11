@@ -22,4 +22,14 @@ for poss in list(permutations(pontos_de_entrega)):
     poss = list(poss)  
     poss.append("R") 
     poss.insert(0, "R") 
-    
+
+    while indice_rota < (len(poss) - 1): 
+        custo_coluna = abs(coordenadas[poss[indice_rota]][0] - coordenadas[poss[indice_rota + 1]][0])
+        custo_linha = abs(coordenadas[poss[indice_rota]][1] - coordenadas[poss[indice_rota + 1]][1])
+        custo_atual += custo_coluna + custo_linha 
+        indice_rota += 1 
+
+    if custo_atual < menor_custo: 
+        menor_custo = custo_atual
+        rota = poss 
+int(' '.join(rota[1:-1]))
