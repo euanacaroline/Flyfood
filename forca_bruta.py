@@ -40,6 +40,16 @@ horas = int(tempo_execucao // 3600)
 minutos = int((tempo_execucao % 3600) // 60)
 segundos = tempo_execucao % 60
 
+def calcular_total_possibilidades(cidades: int) -> int:
+    if cidades == 1:
+        return cidades
+    else:
+        return cidades * calcular_total_possibilidades(cidades - 1)
+
+qtd_pontos_entregas = len(coordenadas) - 1 
+total_possibilidades = calcular_total_possibilidades(qtd_pontos_entregas)
+
+print(f"Total de possibilidades para {qtd_pontos_entregas} pontos de entrega: {total_possibilidades}")
 print("Melhor rota:", " -> ".join(melhor_rota))
 print("Menor custo:", menor_custo)
 print(f"Tempo de processo: {horas} hora(s), {minutos} minuto(s) e {segundos:.2f} segundo(s)")
