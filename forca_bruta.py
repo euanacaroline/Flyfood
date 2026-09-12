@@ -1,35 +1,46 @@
 from itertools import permutations
-file = open("matriz.txt", "r")
-i, j = file.readline().split() 
-linhas = file.read().splitlines() 
+import time
+
+with open("matriz.txt", "r") as file:
+    linhas, colunas = map(int, file.readline().split())
+    matriz = file.read().splitlines()
 
 coordenadas = {}
 pontos_de_entrega = []
 
-for n in range(int(i)):
-    line = linhas[n].split()
-    for m in line:
-        if m != "0":
-            coordenadas[m] = (n, line.index(m))
-            pontos_de_entrega.append(m)
+for linha, conteudo in enumerate(matriz):
+    elementos = conteudo.split()
 
-pontos_de_entrega.remove("R")
+    for coluna, ponto in enumerate(elementos):
+        if ponto != "0":
+            coordenadas[ponto] = (linha, coluna)
+
+            if ponto != "R":
+                pontos_de_entrega.append(ponto)
+
 menor_custo = float("inf")
+melhor_rota = None
 
-for poss in list(permutations(pontos_de_entrega)): 
-    custo_atual = 0 
-    indice_rota = 0 
-    poss = list(poss)  
-    poss.append("R") 
-    poss.insert(0, "R") 
+inicio = time.perf_counter()
 
-    while indice_rota < (len(poss) - 1): 
-        custo_coluna = abs(coordenadas[poss[indice_rota]][0] - coordenadas[poss[indice_rota + 1]][0])
-        custo_linha = abs(coordenadas[poss[indice_rota]][1] - coordenadas[poss[indice_rota + 1]][1])
-        custo_atual += custo_coluna + custo_linha 
-        indice_rota += 1 
+for permutacao in permutations(pontos_de_entrega):
 
-    if custo_atual < menor_custo: 
+    rota_atual = ("R",) + permutacao + ("R",)
+    custo_atual = 0
+
+    for atual, proximo in zip(rota_atual, rota_atual[1:]):
+
+        linha1, coluna1 = coordenadas[atual]
+        linha2, coluna2 = coordenadas[proximo]
+        custo_atual += (abs(linha1 - linha2) + abs(coluna1 - coluna2))
+
+    if custo_atual < menor_custo:
         menor_custo = custo_atual
-        rota = poss 
-int(' '.join(rota[1:-1]))
+        melhor_rota = rota_atual
+
+fim = time.perf_counter()
+tempo_execucao = fim - inicio
+
+print("Melhor rota:", " -> ".join(melhor_rota))
+print("Menor custo:", menor_custo)
+print(f"Tempo de execução: {tempo_execucao:.6f} segundos")

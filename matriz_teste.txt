@@ -3,7 +3,9 @@ E 0 0 0 D
 0 A 0 0 0
 0 0 0 0 C
 R 0 B 0 0
-            r = E A D C B
+                Melhor rota: R -> E -> A -> D -> C -> B -> R
+                Menor custo: 16
+                Tempo de execução: 0.000311 segundos
 
 6 7
 0 B 0 0 I 0 E
@@ -12,7 +14,9 @@ A 0 0 0 0 H 0
 0 0 0 0 C 0 D
 0 0 F 0 0 0 0
 R 0 0 0 G 0 0
-                r = A B J I E H D C G F
+                Melhor rota: R -> A -> B -> J -> I -> E -> H -> D -> C -> G -> F -> R
+                Menor custo: 28
+                Tempo de execução: 14.503440 segundos
 
 8 9
 0 A 0 0 0 F 0 0 M
