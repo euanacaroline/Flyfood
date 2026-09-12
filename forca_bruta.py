@@ -7,6 +7,7 @@ with open("matriz.txt", "r") as file:
 
 coordenadas = {}
 pontos_de_entrega = []
+inicio = time.perf_counter()
 
 for linha, conteudo in enumerate(matriz):
     elementos = conteudo.split()
@@ -20,16 +21,11 @@ for linha, conteudo in enumerate(matriz):
 
 menor_custo = float("inf")
 melhor_rota = None
-
-inicio = time.perf_counter()
-
 for permutacao in permutations(pontos_de_entrega):
-
     rota_atual = ("R",) + permutacao + ("R",)
     custo_atual = 0
 
     for atual, proximo in zip(rota_atual, rota_atual[1:]):
-
         linha1, coluna1 = coordenadas[atual]
         linha2, coluna2 = coordenadas[proximo]
         custo_atual += (abs(linha1 - linha2) + abs(coluna1 - coluna2))
@@ -40,7 +36,10 @@ for permutacao in permutations(pontos_de_entrega):
 
 fim = time.perf_counter()
 tempo_execucao = fim - inicio
+horas = int(tempo_execucao // 3600)
+minutos = int((tempo_execucao % 3600) // 60)
+segundos = tempo_execucao % 60
 
 print("Melhor rota:", " -> ".join(melhor_rota))
 print("Menor custo:", menor_custo)
-print(f"Tempo de execução: {tempo_execucao:.6f} segundos")
+print(f"Tempo de processo: {horas} hora(s), {minutos} minuto(s) e {segundos:.2f} segundo(s)")
