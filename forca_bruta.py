@@ -21,6 +21,10 @@ for linha, conteudo in enumerate(matriz):
 
 menor_custo = float("inf")
 melhor_rota = None
+
+maior_custo = float("-inf")
+pior_rota = None 
+
 for permutacao in permutations(pontos_de_entrega):
     rota_atual = ("R",) + permutacao + ("R",)
     custo_atual = 0
@@ -33,6 +37,14 @@ for permutacao in permutations(pontos_de_entrega):
     if custo_atual < menor_custo:
         menor_custo = custo_atual
         melhor_rota = rota_atual
+
+    if custo_atual < menor_custo: 
+        menor_custo = custo_atual
+        melhor_rota = rota_atual 
+
+    if custo_atual > maior_custo:
+        maior_custo = custo_atual
+        pior_rota = rota_atual
 
 fim = time.perf_counter()
 tempo_execucao = fim - inicio
@@ -53,3 +65,5 @@ print(f"Total de possibilidades para {qtd_pontos_entregas} pontos de entrega: {t
 print(f"Melhor rota: {' -> '.join(melhor_rota)}")
 print(f"Menor custo: {menor_custo}")
 print(f"Tempo de processo: {horas} hora(s), {minutos} minuto(s) e {segundos:.2f} segundo(s)")
+print(f"Pior rota: {' -> '.join(pior_rota)}")
+print(f"Maior custo: {maior_custo}")
