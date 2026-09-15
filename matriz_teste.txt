@@ -3,20 +3,147 @@ E 0 0 0 D
 0 A 0 0 0
 0 0 0 0 C
 R 0 B 0 0
-                Melhor rota: R -> E -> A -> D -> C -> B -> R
-                Menor custo: 16
-                Tempo de execução: 0.000311 segundos
+
+        Total de possibilidades para 3 pontos de entrega: 6
+        Melhor rota: R -> A -> B -> C -> R
+        Menor custo: 12
+        Tempo de processo: 0 hora(s), 0 minuto(s) e 0.00 segundo(s)
+        Pior rota: R -> A -> C -> B -> R
+        Maior custo: 16
+
+4 5
+0 A 0 0 B
+0 0 C 0 0
+R 0 0 0 D
+0 0 0 0 0
+
+        Total de possibilidades para 4 pontos de entrega: 24
+        Melhor rota: R -> A -> B -> D -> C -> R
+        Menor custo: 14
+        Tempo de processo: 0 hora(s), 0 minuto(s) e 0.00 segundo(s)
+        Pior rota: R -> A -> D -> C -> B -> R
+        Maior custo: 20
+
+5 6
+0 A 0 0 B 0
+0 0 0 C 0 0
+R 0 D 0 0 E
+0 0 0 0 0 0
+0 0 0 0 0 0
+
+        Total de possibilidades para 5 pontos de entrega: 120
+        Melhor rota: R -> A -> B -> C -> E -> D -> R
+        Menor custo: 16
+        Tempo de processo: 0 hora(s), 0 minuto(s) e 0.00 segundo(s)
+        Pior rota: R -> B -> D -> A -> E -> C -> R
+        Maior custo: 26
+
+5 6
+0 A 0 0 B 0
+0 0 0 C 0 D
+R 0 E 0 0 0
+0 0 0 0 F 0
+0 0 0 0 0 0
+
+        Total de possibilidades para 6 pontos de entrega: 720
+        Melhor rota: R -> A -> B -> C -> D -> F -> E -> R
+        Menor custo: 18
+        Tempo de processo: 0 hora(s), 0 minuto(s) e 0.00 segundo(s)
+        Pior rota: R -> B -> E -> C -> F -> A -> D -> R
+        Maior custo: 32
 
 6 7
-0 B 0 0 I 0 E
-0 0 0 J 0 0 0
-A 0 0 0 0 H 0
-0 0 0 0 C 0 D
-0 0 F 0 0 0 0
-R 0 0 0 G 0 0
-                Melhor rota: R -> A -> B -> J -> I -> E -> H -> D -> C -> G -> F -> R
-                Menor custo: 28
-                Tempo de execução: 14.503440 segundos
+0 A 0 0 B 0 G
+0 0 0 C 0 0 0
+R 0 D 0 0 E 0
+0 0 0 0 F 0 0
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+
+        Total de possibilidades para 7 pontos de entrega: 5040
+        Melhor rota: R -> A -> B -> G -> E -> F -> C -> D -> R
+        Menor custo: 20
+        Tempo de processo: 0 hora(s), 0 minuto(s) e 0.02 segundo(s)
+        Pior rota: R -> B -> C -> E -> A -> F -> D -> G -> R
+        Maior custo: 40
+
+6 7
+0 A 0 0 B 0 G
+0 0 0 C 0 0 0
+R 0 D 0 0 E 0
+0 0 0 0 F 0 H
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+
+        Total de possibilidades para 8 pontos de entrega: 40320
+        Melhor rota: R -> A -> B -> G -> E -> H -> F -> C -> D -> R
+        Menor custo: 22
+        Tempo de processo: 0 hora(s), 0 minuto(s) e 0.16 segundo(s)
+        Pior rota: R -> B -> D -> G -> F -> A -> E -> C -> H -> R
+        Maior custo: 48
+
+6 8
+0 A 0 0 B 0 G 0
+0 0 0 C 0 0 0 I
+R 0 D 0 0 E 0 0
+0 0 0 0 F 0 H 0
+0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+
+        Total de possibilidades para 9 pontos de entrega: 362880
+        Melhor rota: R -> A -> B -> G -> I -> E -> H -> F -> C -> D -> R
+        Menor custo: 24
+        Tempo de processo: 0 hora(s), 0 minuto(s) e 1.38 segundo(s)
+        Pior rota: R -> B -> E -> A -> H -> C -> F -> G -> D -> I -> R
+        Maior custo: 56
+
+7 8
+0 A 0 0 B 0 G 0
+0 0 0 C 0 0 0 I
+R 0 D 0 0 E 0 0
+0 0 0 0 F 0 H 0
+0 J 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+
+        Total de possibilidades para 10 pontos de entrega: 3628800
+        Melhor rota: R -> A -> B -> G -> I -> E -> H -> F -> C -> D -> J -> R
+        Menor custo: 28
+        Tempo de processo: 0 hora(s), 0 minuto(s) e 15.87 segundo(s)
+        Pior rota: R -> B -> D -> G -> F -> A -> H -> C -> E -> J -> I -> R
+        Maior custo: 66
+
+7 8
+0 A 0 0 B 0 G 0
+0 0 0 C 0 0 0 I
+R 0 D 0 0 E 0 0
+0 0 0 0 F 0 H 0
+0 J 0 0 0 0 0 K
+0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+
+        Total de possibilidades para 11 pontos de entrega: 39916800
+        Melhor rota: R -> A -> B -> G -> I -> K -> H -> E -> F -> C -> D -> J -> R
+        Menor custo: 30
+        Tempo de processo: 0 hora(s), 2 minuto(s) e 57.82 segundo(s)
+        Pior rota: R -> B -> D -> G -> F -> I -> J -> E -> A -> H -> C -> K -> R
+        Maior custo: 76
+
+7 8
+0 A 0 0 B 0 G 0
+0 0 0 C 0 0 0 I
+R 0 D 0 0 E 0 0
+0 0 0 0 F 0 H 0
+0 J 0 0 0 0 0 K
+0 0 0 L 0 0 0 0
+0 0 0 0 0 0 0 0
+
+        Total de possibilidades para 12 pontos de entrega: 479001600
+        Melhor rota: R -> A -> C -> B -> G -> I -> K -> H -> E -> F -> L -> J -> D -> R
+        Menor custo: 32
+        Tempo de processo: 0 hora(s), 39 minuto(s) e 22.09 segundo(s)
+        Pior rota: R -> B -> D -> G -> J -> I -> L -> E -> F -> A -> H -> C -> K -> R
+        Maior custo: 84
 
 8 9
 0 A 0 0 0 F 0 0 M
@@ -27,3 +154,10 @@ R 0 0 0 E 0 0 0 J
 0 0 0 0 0 K 0 0 0
 0 L 0 0 0 0 0 0 0
 0 0 0 0 0 0 0 0 0
+
+        Total de possibilidades para 13 pontos de entrega: 6227020800
+        Melhor rota: R -> C -> A -> F -> M -> G -> I -> J -> K -> E -> H -> B -> D -> L -> R
+        Menor custo: 40
+        Tempo de processo: 9 hora(s), 20 minuto(s) e 52.23 segundo(s)
+        Pior rota: R -> F -> D -> M -> E -> A -> I -> B -> J -> C -> K -> H -> L -> G -> R
+        Maior custo: 110
