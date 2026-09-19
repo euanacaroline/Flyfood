@@ -38,10 +38,6 @@ for permutacao in permutations(pontos_de_entrega):
         menor_custo = custo_atual
         melhor_rota = rota_atual
 
-    if custo_atual < menor_custo: 
-        menor_custo = custo_atual
-        melhor_rota = rota_atual 
-
     if custo_atual > maior_custo:
         maior_custo = custo_atual
         pior_rota = rota_atual
