@@ -14,7 +14,7 @@ A ideia do FlyFood é simples: o drone sai de um ponto de origem (o restaurante 
 
 Como o drone se desloca em uma grade celular (apenas nas direções vertical e horizontal, sem trajetórias diagonais), utilizamos a **Distância de Manhattan** para calcular o custo do percurso em *dronômetros*.
 
-### Por que usar Força Bruta? 🤔
+### Por que usar Força Bruta? 
 Apesar de sabermos que a Força Bruta possui complexidade assintótica $O(N! \cdot N)$ e sofre com a explosão combinatória, a escolha dessa estratégia foi proposital para:
 1. **Garantir a solução 100% ótima** (servindo como nossa linha de base/*baseline*);
 2. **Mapear a pior rota possível** (para entender o limite máximo de consumo de energia da bateria);
