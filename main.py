@@ -1,76 +1,138 @@
 import random
-import copy
+import numpy as np
 import pygad
+from lerBrasil58 import custoCaminho, distancias, inicializaPopulacao
 
-from lerBrasil58  import distancias, custoCaminho, inicializaPopulacao, calculaAptidao
-
-
-QTDE_CIDADES = 58          # Instância brasil58
-TAMANHO_POPULACAO = 200    # Quantidade de indivíduos por geração
-GERACOES = 1000            # Número máximo de gerações
-TAXA_CROSSOVER = 0.85      # 85% de chance de ocorrer cruzamento
-TAXA_MUTACAO = 0.20        # 20% de chance de um filho sofrer mutação
-TAMANHO_TORNEIO = 5        # Quantidade de participantes no torneio de seleção
-
+QTDE_CIDADES = 58
+TAMANHO_POPULACAO = 200
+GERACOES = 800
+TAXA_CROSSOVER = 0.85
+TAXA_MUTACAO = 0.20
+NUMERO_PAIS = 140
+TAMANHO_TORNEIO = 40
 
 def fitness_func(ga_instance, solution, solution_idx):
-    """ 
-
-    Calcula a aptidão de uma solução (caminho) com base no custo total do caminho.
-    Define o quão bom é o caminho em termos de distância percorrida.
-    Quanto menor o custo, maior a aptidão.
-
-    """
+    """Fitness invertido (quanto menor o custo, maior a aptidão/fitness)."""
     custo = custoCaminho(solution, distancias)
-    return 1.0 / (custo + 1e-6) # o 1e-6 é para evitar divisão por zero, caso o custo seja zero.
+    return 1.0 / (custo + 1e-6)
 
 
-def crossover_func(parents, num_children, ga_instance):
-
-    index1 = random.randint(0, QTDE_CIDADES - 1)
-    index2 = random.randint(0, QTDE_CIDADES - 1)
-
-    index1, index2 = min(index1, index2), max(index1, index2)
-
+def crossover_func(parents, offspring_size, ga_instance):
+    """Cruzamento através do uso de Edge Recombination."""
+    num_children, num_genes = offspring_size
     children = []
-    while num_children > 0:
-        parent1 = random.choice(parents)
-        parent2 = random.choice(parents)
+    num_parents = len(parents)
 
-        child = parent1[:index1] + [city for city in parent2[index1:index2] if city not in parent1[:index1]] + parent1[index2:]
+    for i in range(num_children):
+        p1 = list(parents[i % num_parents])
+        p2 = list(parents[(i + 1) % num_parents])
+        tabela_arestas = {cidade: set() for cidade in p1}
+        for parent in (p1, p2):
+            for idx, cidade in enumerate(parent):
+                left = parent[(idx - 1) % num_genes]
+                right = parent[(idx + 1) % num_genes]
+                tabela_arestas[cidade].update((left, right))
+
+        cidade_atual = p1[0] if random.random() < 0.5 else p2[0]
+        child = []
+        cidades_disponiveis = set(p1)
+
+        while cidades_disponiveis:
+            child.append(cidade_atual)
+            cidades_disponiveis.remove(cidade_atual)
+
+            for vizinhos in tabela_arestas.values():
+                vizinhos.discard(cidade_atual)
+
+            candidatos = tabela_arestas[cidade_atual] & cidades_disponiveis
+
+            if candidatos:
+                menor_grau = min(len(tabela_arestas[c]) for c in candidatos)
+                melhores = [c for c in candidatos if len(tabela_arestas[c]) == menor_grau]
+                cidade_atual = random.choice(melhores)
+            elif cidades_disponiveis:
+                cidade_atual = random.choice(list(cidades_disponiveis))
+
         children.append(child)
 
-        num_children -= 1
-    
-    return children
+    return np.array(children, dtype=int)
 
-def swap():
-    return
-    
+
+def mutation_func(offspring, ga_instance):
+    """
+    Realiza uma mutação híbrida, aplicando a inversão de sub-rota seguida de swap (troca local) para aumentar a variabilidade genética.
+    """
+    for individuo in offspring:
+        if random.random() < TAXA_MUTACAO:
+            inicio, fim = sorted(random.sample(range(QTDE_CIDADES), 2))
+            individuo[inicio:fim] = individuo[inicio:fim][::-1]
+
+        if random.random() < TAXA_MUTACAO:
+            idx1, idx2 = random.sample(range(QTDE_CIDADES), 2)
+            individuo[idx1], individuo[idx2] = individuo[idx2], individuo[idx1]
+
+    return offspring
+
+
+def algoritmo_2opt(rota, dic_distancias):
+    """Busca Local 2-Opt através da troca de arestas."""
+    melhor_rota = [int(c) for c in rota]
+    n = len(melhor_rota)
+    melhorou = True
+
+    while melhorou:
+        melhorou = False
+        for i in range(1, n - 1):
+            for j in range(i + 1, n):
+                u1, v1 = melhor_rota[i - 1], melhor_rota[i]
+                u2, v2 = melhor_rota[j - 1], melhor_rota[j % n]
+                custo_atual = dic_distancias[(u1, v1)] + dic_distancias[(u2, v2)]
+                custo_novo = dic_distancias[(u1, u2)] + dic_distancias[(v1, v2)]
+                if custo_novo < custo_atual:
+                    melhor_rota[i:j] = melhor_rota[i:j][::-1]
+                    melhorou = True
+                    break
+
+            if melhorou:
+                break
+
+    return melhor_rota
 
 def executar_ag():
-    '''  
-
-    Executa o algoritmo genérico
-    
-    '''
-    
-    populacao = inicializaPopulacao(TAMANHO_POPULACAO, QTDE_CIDADES)
-
-
+    populacao_inicial = inicializaPopulacao(TAMANHO_POPULACAO, QTDE_CIDADES)
     ga_instance = pygad.GA(
         num_generations=GERACOES,
+        num_parents_mating=NUMERO_PAIS,
+        initial_population=populacao_inicial,
         fitness_func=fitness_func,
         crossover_type=crossover_func,
-        mutation_probability=TAXA_MUTACAO,
+        crossover_probability=TAXA_CROSSOVER,
+        mutation_type=mutation_func,
+        parent_selection_type="tournament",
         K_tournament=TAMANHO_TORNEIO,
         gene_type=int,
-
+        gene_space=list(range(1, QTDE_CIDADES + 1)),
+        allow_duplicate_genes=False,
+        keep_elitism=5,
     )
 
     ga_instance.run()
+    melhor_solucao_ga, _, _ = ga_instance.best_solution()
+    rota_ga = [int(x) for x in melhor_solucao_ga]
+    custo_ga_puro = custoCaminho(rota_ga, distancias)
+    rota_2opt = algoritmo_2opt(rota_ga, distancias)
+    custo_2opt = custoCaminho(rota_2opt, distancias)
+    return rota_ga, custo_ga_puro, rota_2opt, custo_2opt
 
-    melhor_solucao, melhor_aptidao, _ = ga_instance.best_solution()
-    melhor_custo = custoCaminho(melhor_solucao, distancias)
-
-    return melhor_solucao, melhor_custo
+if __name__ == "__main__":
+    rota_ga, custo_ga, rota_2opt, custo_2opt = executar_ag()
+    print("=" * 65)
+    print("           RESULTADO COMPARATIVO - TSP (BRASIL 58)           ")
+    print("=" * 65)
+    print(f"1. Custo de Saída do PyGAD (ERX Puro)  : {custo_ga:.2f}")
+    print(f"2. Custo Final Otimizado (ERX + 2-Opt) : {custo_2opt:.2f}")
+    ganho_perc = ((custo_ga - custo_2opt) / custo_ga) * 100
+    print(f"   -> Redução de custo obtida pelo 2-Opt: {ganho_perc:.2f}%")
+    print("-" * 65)
+    print(f"Rota Otimizada Final:\n{' -> '.join(map(str, rota_2opt))}")
+    print("=" * 65)

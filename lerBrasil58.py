@@ -1,58 +1,69 @@
-#from file import *
+from pathlib import Path
+import random
 
-objArq = open("edgesbrasil58.tsp")
-#se você quiser uma lista onde cada objeto será uma string
-#grande representando uma linha do arquivo:
-#listaLinhas = objArq.readlines() #obs: cada linha terah um enter junto com o ultimo elemento
+QTDE_CIDADES = 58
 
-distancias = {}
+def ler_distancias(caminho_arquivo: Path, qtde_cidades: int = QTDE_CIDADES):
+    """Lê os pesos da parte triangular superior de uma instância TSP."""
+    if not caminho_arquivo.exists():
+        raise FileNotFoundError(f"Arquivo não encontrado: {caminho_arquivo}")
 
-for i in range(1, 58): #linhas 1 a 57 pois a 58 nao terá aresta
-	linha = objArq.readline() #le só uma linha do arquivo
-	#transformando a linha em lista de strings:
-	lista = linha.split() #obs: lista de strings (não int)
+    with caminho_arquivo.open(encoding="utf-8") as arquivo:
+        pesos = [int(token) for token in arquivo.read().split()]
 
-	for j in range(i+1, 59): #colunas i+1 a 58
-		if len(lista) > 0:
-			peso = int(lista.pop(0)) #obs: peso int, poderia ser float em outro problema
-		else:
-			print(f"Erro! linha {i} do arquivo não possui elementos suficientes")
-			exit()
-		#gravando a aresta em (i, j) e (j, i):
-		distancias[(i,j)] = peso
-		distancias[(j,i)] = peso
-objArq.close()
+    quantidade_esperada = qtde_cidades * (qtde_cidades - 1) // 2
+    if len(pesos) != quantidade_esperada:
+        raise ValueError(
+            f"Arquivo TSP inválido: esperados {quantidade_esperada} pesos, "
+            f"mas foram encontrados {len(pesos)}."
+        )
 
-#funcao que retorna o custo total do caminho:
+    distancias = {}
+    indice = 0
+    for i in range(1, qtde_cidades):
+        for j in range(i + 1, qtde_cidades + 1):
+            peso = pesos[indice]
+            indice += 1
+            distancias[(i, j)] = peso
+            distancias[(j, i)] = peso
+
+    for i in range(1, qtde_cidades + 1):
+        distancias[(i, i)] = 0
+
+    return distancias
+
+diretorio_script = Path(__file__).parent
+caminho_arquivo = diretorio_script / "edgesbrasil58.tsp"
+distancias = ler_distancias(caminho_arquivo)
+
 def custoCaminho(permutacao, dicDistancias):
-	#ex: permutacao = [5, 14, 2, 3, 7, ...]
-	soma = 0
-	for i in range(len(permutacao)-1):
-		a = permutacao[i]
-		b = permutacao[i+1]
-		if (a,b) in dicDistancias:
-			soma += dicDistancias[(a,b)]
-		else:
-			print(f"Erro! ({a},{b}) não existe no dicionario!")
-			exit()
-	soma += dicDistancias[(permutacao[-1],permutacao[0])]
-	return soma
-	
+    """Calcula o custo total de um circuito fechado (retornando à cidade de origem)."""
+    n = len(permutacao)
+    if n < 2:
+        raise ValueError("A rota deve conter pelo menos duas cidades.")
+
+    soma = 0
+    for i in range(n):
+        a = int(permutacao[i])
+        b = int(permutacao[(i + 1) % n])  # Fecha o ciclo no último elemento
+        
+        try:
+            soma += dicDistancias[(a, b)]
+        except KeyError as erro:
+            raise ValueError(f"A aresta ({a}, {b}) não existe no dicionário.") from erro
+
+    return soma
+
 def inicializaPopulacao(tamanho, qtdeCidades):
-	import random
-	#criando uma lista com "tamanho" permutacoes aleatorias de cidades:
-	lista = []
-	for i in range(tamanho):
-		individuo = list(range(1, qtdeCidades+1))
-		random.shuffle(individuo)
-		lista.append(individuo)
-	return lista
+    """Gera uma população inicial com permutações de 1 até qtdeCidades."""
+    populacao = []
+    base_cidades = list(range(1, qtdeCidades + 1))
+    for _ in range(tamanho):
+        individuo = base_cidades.copy()
+        random.shuffle(individuo)
+        populacao.append(individuo)
+    return populacao
 
 def calculaAptidao(populacao, dicDistancias):
-	listaAptidao = []
-	for elem in populacao:
-		listaAptidao.append(custoCaminho(elem, dicDistancias))
-	return listaAptidao
-
-		
-	
+    """Retorna uma lista de custos para a população fornecida."""
+    return [custoCaminho(elem, dicDistancias) for elem in populacao]
