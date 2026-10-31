@@ -4,11 +4,11 @@ import pygad
 from lerBrasil58 import custoCaminho, distancias, inicializaPopulacao
 
 QTDE_CIDADES = 58
-TAMANHO_POPULACAO = 250
-GERACOES = 5000
+TAMANHO_POPULACAO = 200
+GERACOES = 2500
 TAXA_CROSSOVER = 0.85
-TAXA_MUTACAO = 0.20
-NUMERO_PAIS = 140
+TAXA_MUTACAO = 0.15
+NUMERO_PAIS_REPRODUZINDO = 100
 TAMANHO_TORNEIO = 2
 
 def fitness_func(ga_instance, solution, solution_idx):
@@ -86,7 +86,7 @@ def executar_ag():
     populacao_inicial = inicializaPopulacao(TAMANHO_POPULACAO, QTDE_CIDADES)
     ga_instance = pygad.GA(
         num_generations=GERACOES,
-        num_parents_mating=NUMERO_PAIS,
+        num_parents_mating=NUMERO_PAIS_REPRODUZINDO,
         initial_population=populacao_inicial,
         fitness_func=fitness_func,
         crossover_type=crossover_func,
@@ -97,7 +97,7 @@ def executar_ag():
         gene_type=int,
         gene_space=list(range(1, QTDE_CIDADES + 1)),
         allow_duplicate_genes=False,
-        keep_elitism=3,
+        keep_elitism=100,
     )
 
     ga_instance.run()
@@ -110,13 +110,13 @@ def executar_ag():
 
 if __name__ == "__main__":
     rota_ga, custo_ga, rota_2opt, custo_2opt = executar_ag()
-    print("=" * 65)
+    print("=" * 120)
     print("           RESULTADO COMPARATIVO - TSP (BRASIL 58)           ")
-    print("=" * 65)
+    print("=" * 120)
     print(f"1. Custo de Saída do PyGAD (ERX Puro)  : {custo_ga:.2f}")
     print(f"2. Custo Final Otimizado (ERX + 2-Opt) : {custo_2opt:.2f}")
     ganho_perc = ((custo_ga - custo_2opt) / custo_ga) * 100
     print(f"   -> Redução de custo obtida pelo 2-Opt: {ganho_perc:.2f}%")
-    print("-" * 65)
+    print("-" * 120)
     print(f"Rota Otimizada Final:\n{' -> '.join(map(str, rota_2opt))}")
-    print("=" * 65)
+    print("=" * 120)
