@@ -4,21 +4,20 @@ import pygad
 from lerBrasil58 import custoCaminho, distancias, inicializaPopulacao
 
 QTDE_CIDADES = 58
-TAMANHO_POPULACAO = 200
-GERACOES = 800
+TAMANHO_POPULACAO = 250
+GERACOES = 5000
 TAXA_CROSSOVER = 0.85
 TAXA_MUTACAO = 0.20
 NUMERO_PAIS = 140
-TAMANHO_TORNEIO = 40
+TAMANHO_TORNEIO = 2
 
 def fitness_func(ga_instance, solution, solution_idx):
     """Fitness invertido (quanto menor o custo, maior a aptidão/fitness)."""
     custo = custoCaminho(solution, distancias)
-    return 1.0 / (custo + 1e-6)
-
+    return 1.0 / 1e-6 if custo == 0 else 1.0 / custo
 
 def crossover_func(parents, offspring_size, ga_instance):
-    """Cruzamento através do uso de Edge Recombination."""
+    """Cruzamento Order Crossover (OX) para cromossomos de permutação."""
     num_children, num_genes = offspring_size
     children = []
     num_parents = len(parents)
@@ -26,33 +25,18 @@ def crossover_func(parents, offspring_size, ga_instance):
     for i in range(num_children):
         p1 = list(parents[i % num_parents])
         p2 = list(parents[(i + 1) % num_parents])
-        tabela_arestas = {cidade: set() for cidade in p1}
-        for parent in (p1, p2):
-            for idx, cidade in enumerate(parent):
-                left = parent[(idx - 1) % num_genes]
-                right = parent[(idx + 1) % num_genes]
-                tabela_arestas[cidade].update((left, right))
+        inicio, fim = sorted(random.sample(range(num_genes), 2))
+        child = [None] * num_genes
+        child[inicio:fim] = p1[inicio:fim]
 
-        cidade_atual = p1[0] if random.random() < 0.5 else p2[0]
-        child = []
-        cidades_disponiveis = set(p1)
-
-        while cidades_disponiveis:
-            child.append(cidade_atual)
-            cidades_disponiveis.remove(cidade_atual)
-
-            for vizinhos in tabela_arestas.values():
-                vizinhos.discard(cidade_atual)
-
-            candidatos = tabela_arestas[cidade_atual] & cidades_disponiveis
-
-            if candidatos:
-                menor_grau = min(len(tabela_arestas[c]) for c in candidatos)
-                melhores = [c for c in candidatos if len(tabela_arestas[c]) == menor_grau]
-                cidade_atual = random.choice(melhores)
-            elif cidades_disponiveis:
-                cidade_atual = random.choice(list(cidades_disponiveis))
-
+        cidades_restantes = [
+            cidade for cidade in p2 if cidade not in child[inicio:fim]
+        ]
+        posicoes_restantes = (
+            list(range(fim, num_genes)) + list(range(0, inicio))
+        )
+        for posicao, cidade in zip(posicoes_restantes, cidades_restantes):
+            child[posicao] = cidade
         children.append(child)
 
     return np.array(children, dtype=int)
@@ -113,7 +97,7 @@ def executar_ag():
         gene_type=int,
         gene_space=list(range(1, QTDE_CIDADES + 1)),
         allow_duplicate_genes=False,
-        keep_elitism=5,
+        keep_elitism=3,
     )
 
     ga_instance.run()
