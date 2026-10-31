@@ -1,9 +1,9 @@
 import random
-import numpy as np
 import pygad
+import numpy
 from lerBrasil58 import custoCaminho, distancias, inicializaPopulacao
+from lerFlyfood import custoCaminhoFlyfood, distancias_flyfood, inicializaPopulacaoFlyfood, ponto_inicio, pontos_entrega
 
-QTDE_CIDADES = 58
 TAMANHO_POPULACAO = 200
 GERACOES = 2500
 TAXA_CROSSOVER = 0.85
@@ -11,10 +11,42 @@ TAXA_MUTACAO = 0.15
 NUMERO_PAIS_REPRODUZINDO = 100
 TAMANHO_TORNEIO = 2
 
-def fitness_func(ga_instance, solution, solution_idx):
-    """Fitness invertido (quanto menor o custo, maior a aptidão/fitness)."""
-    custo = custoCaminho(solution, distancias)
-    return 1.0 / 1e-6 if custo == 0 else 1.0 / custo
+def _configurar_problema(opcao):
+    """Retorna a configuração de genes, custo e população do problema escolhido."""
+    if opcao == "1":
+        qtde_cidades = 58
+        return {
+            "nome": "BRASIL58",
+            "qtde_cidades": qtde_cidades,
+            "distancias": distancias,
+            "custo": custoCaminho,
+            "populacao": inicializaPopulacao(TAMANHO_POPULACAO, qtde_cidades),
+            "gene_space": list(range(1, qtde_cidades + 1)),
+            "converter_rota": lambda rota: [int(cidade) for cidade in rota],
+        }
+
+    if opcao == "2":
+        qtde_cidades = len(pontos_entrega)
+        return {
+            "nome": "FLYFOOD",
+            "qtde_cidades": qtde_cidades,
+            "distancias": distancias_flyfood,
+            "custo": custoCaminhoFlyfood,
+            "populacao": inicializaPopulacaoFlyfood(TAMANHO_POPULACAO, list(range(qtde_cidades))),
+            "gene_space": list(range(qtde_cidades)),
+            "converter_rota": lambda rota: [pontos_entrega[int(indice)] for indice in rota],
+        }
+
+    raise ValueError("Opção inválida. Escolha 1 para Brasil58 ou 2 para FlyFood.")
+
+
+def _calcular_custo(rota, configuracao):
+    rota_convertida = configuracao["converter_rota"](rota)
+    if configuracao["nome"] == "FLYFOOD":
+        return configuracao["custo"](rota_convertida, configuracao["distancias"], ponto_inicio)
+    
+    return configuracao["custo"](rota_convertida, configuracao["distancias"])
+
 
 def crossover_func(parents, offspring_size, ga_instance):
     """Cruzamento Order Crossover (OX) para cromossomos de permutação."""
@@ -28,39 +60,46 @@ def crossover_func(parents, offspring_size, ga_instance):
         inicio, fim = sorted(random.sample(range(num_genes), 2))
         child = [None] * num_genes
         child[inicio:fim] = p1[inicio:fim]
-
-        cidades_restantes = [
-            cidade for cidade in p2 if cidade not in child[inicio:fim]
-        ]
-        posicoes_restantes = (
-            list(range(fim, num_genes)) + list(range(0, inicio))
-        )
+        cidades_restantes = [cidade for cidade in p2 if cidade not in child[inicio:fim]]
+        posicoes_restantes = (list(range(fim, num_genes)) + list(range(0, inicio)))
         for posicao, cidade in zip(posicoes_restantes, cidades_restantes):
             child[posicao] = cidade
+
         children.append(child)
 
-    return np.array(children, dtype=int)
+    return numpy.array(children, dtype=int)
 
 
-def mutation_func(offspring, ga_instance):
-    """
-    Realiza uma mutação híbrida, aplicando a inversão de sub-rota seguida de swap (troca local) para aumentar a variabilidade genética.
-    """
-    for individuo in offspring:
-        if random.random() < TAXA_MUTACAO:
-            inicio, fim = sorted(random.sample(range(QTDE_CIDADES), 2))
-            individuo[inicio:fim] = individuo[inicio:fim][::-1]
+def _criar_mutacao(qtde_cidades):
+    def mutation_func(offspring, ga_instance):
+        for individuo in offspring:
+            if random.random() < TAXA_MUTACAO:
+                inicio, fim = sorted(random.sample(range(qtde_cidades), 2))
+                individuo[inicio:fim] = individuo[inicio:fim][::-1]
 
-        if random.random() < TAXA_MUTACAO:
-            idx1, idx2 = random.sample(range(QTDE_CIDADES), 2)
-            individuo[idx1], individuo[idx2] = individuo[idx2], individuo[idx1]
+            if random.random() < TAXA_MUTACAO:
+                indice_1, indice_2 = random.sample(range(qtde_cidades), 2)
+                individuo[indice_1], individuo[indice_2] = (
+                    individuo[indice_2],
+                    individuo[indice_1],
+                )
 
-    return offspring
+        return offspring
+
+    return mutation_func
+
+
+def _criar_fitness(configuracao):
+    def fitness_func(ga_instance, solution, solution_idx):
+        custo = _calcular_custo(solution, configuracao)
+        return 1.0 / 1e-6 if custo == 0 else 1.0 / custo
+
+    return fitness_func
 
 
 def algoritmo_2opt(rota, dic_distancias):
-    """Busca Local 2-Opt através da troca de arestas."""
-    melhor_rota = [int(c) for c in rota]
+    """Busca local 2-Opt para uma rota com cidades inteiras ou rotuladas."""
+    melhor_rota = list(rota)
     n = len(melhor_rota)
     melhorou = True
 
@@ -82,41 +121,60 @@ def algoritmo_2opt(rota, dic_distancias):
 
     return melhor_rota
 
-def executar_ag():
-    populacao_inicial = inicializaPopulacao(TAMANHO_POPULACAO, QTDE_CIDADES)
+
+def executar_ag(configuracao):
+    """Executa o algoritmo genético para a configuração selecionada."""
     ga_instance = pygad.GA(
         num_generations=GERACOES,
         num_parents_mating=NUMERO_PAIS_REPRODUZINDO,
-        initial_population=populacao_inicial,
-        fitness_func=fitness_func,
+        initial_population=configuracao["populacao"],
+        fitness_func=_criar_fitness(configuracao),
         crossover_type=crossover_func,
         crossover_probability=TAXA_CROSSOVER,
-        mutation_type=mutation_func,
+        mutation_type=_criar_mutacao(configuracao["qtde_cidades"]),
         parent_selection_type="tournament",
         K_tournament=TAMANHO_TORNEIO,
         gene_type=int,
-        gene_space=list(range(1, QTDE_CIDADES + 1)),
+        gene_space=configuracao["gene_space"],
         allow_duplicate_genes=False,
         keep_elitism=100,
     )
 
     ga_instance.run()
     melhor_solucao_ga, _, _ = ga_instance.best_solution()
-    rota_ga = [int(x) for x in melhor_solucao_ga]
-    custo_ga_puro = custoCaminho(rota_ga, distancias)
-    rota_2opt = algoritmo_2opt(rota_ga, distancias)
-    custo_2opt = custoCaminho(rota_2opt, distancias)
-    return rota_ga, custo_ga_puro, rota_2opt, custo_2opt
+    rota_ga = configuracao["converter_rota"](melhor_solucao_ga)
+    custo_ga = (custoCaminhoFlyfood(rota_ga, distancias_flyfood, ponto_inicio) if configuracao["nome"] == "FLYFOOD" else custoCaminho(rota_ga, distancias))
+    rota_2opt = algoritmo_2opt(rota_ga, configuracao["distancias"])
+    custo_2opt = (custoCaminhoFlyfood(rota_2opt, distancias_flyfood, ponto_inicio) if configuracao["nome"] == "FLYFOOD" else custoCaminho(rota_2opt, distancias))
+    return rota_ga, custo_ga, rota_2opt, custo_2opt
+
+def selecionar_problema():
+    while True:
+        print("\nEscolha o problema que deseja resolver:")
+        print("1 - Brasil58")
+        print("2 - FlyFood")
+        opcao = input("Digite a opção: ").strip()
+        if opcao in {"1", "2"}:
+            return opcao
+        
+        print("Opção inválida. Digite 1 ou 2.")
+
+def exibir_resultado(configuracao, resultado):
+    rota_ga, custo_ga, rota_2opt, custo_2opt = resultado
+    ganho_perc = ((custo_ga - custo_2opt) / custo_ga) * 100 if custo_ga else 0
+    print("=" * 120)
+    print(f"           RESULTADO COMPARATIVO - {configuracao['nome']}           ")
+    print("=" * 120)
+    print(f"Quantidade de cidades/pontos: {configuracao['qtde_cidades']}")
+    print(f"1. Custo de saída do AG          : {custo_ga:.2f}")
+    print(f"2. Custo final otimizado (2-Opt)    : {custo_2opt:.2f}")
+    print(f"   -> Redução de custo pelo 2-Opt: {ganho_perc:.2f}%")
+    print("-" * 120)
+    print(f"Rota inicial do AG:\n{' -> '.join(map(str, rota_ga))}")
+    print(f"Rota otimizada final:\n{' -> '.join(map(str, rota_2opt))}")
+    print("=" * 120)
 
 if __name__ == "__main__":
-    rota_ga, custo_ga, rota_2opt, custo_2opt = executar_ag()
-    print("=" * 120)
-    print("           RESULTADO COMPARATIVO - TSP (BRASIL 58)           ")
-    print("=" * 120)
-    print(f"1. Custo de Saída do PyGAD (ERX Puro)  : {custo_ga:.2f}")
-    print(f"2. Custo Final Otimizado (ERX + 2-Opt) : {custo_2opt:.2f}")
-    ganho_perc = ((custo_ga - custo_2opt) / custo_ga) * 100
-    print(f"   -> Redução de custo obtida pelo 2-Opt: {ganho_perc:.2f}%")
-    print("-" * 120)
-    print(f"Rota Otimizada Final:\n{' -> '.join(map(str, rota_2opt))}")
-    print("=" * 120)
+    opcao = selecionar_problema()
+    configuracao = _configurar_problema(opcao)
+    exibir_resultado(configuracao, executar_ag(configuracao))
