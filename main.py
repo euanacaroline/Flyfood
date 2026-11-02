@@ -1,4 +1,5 @@
 import random
+from time import time
 import pygad
 import numpy
 from lerBrasil58 import custoCaminho, distancias, inicializaPopulacao
@@ -167,6 +168,7 @@ def exibir_resultado(configuracao, resultado):
     """Exibe o resultado obtido pelo algoritmo genético e pela otimização 2-Opt."""
     rota_ga, custo_ga, rota_2opt, custo_2opt = resultado
     ganho_perc = ((custo_ga - custo_2opt) / custo_ga) * 100 if custo_ga else 0
+    tempo_total = time() - tempo_inicial
     print("=" * 120)
     print(f"           RESULTADO COMPARATIVO - {configuracao['nome']}           ")
     print("=" * 120)
@@ -183,9 +185,11 @@ def exibir_resultado(configuracao, resultado):
         print(f"Rota inicial do AG:\n{' -> '.join(map(str, rota_ga))}")
         print(f"Rota otimizada final:\n{' -> '.join(map(str, rota_2opt))}")
     
+    print(f"Tempo total de execução: {tempo_total:.2f} segundos")
     print("=" * 120)
 
 if __name__ == "__main__":
     opcao = selecionar_problema()
     configuracao = _configurar_problema(opcao)
+    tempo_inicial = time()
     exibir_resultado(configuracao, executar_ag(configuracao))
