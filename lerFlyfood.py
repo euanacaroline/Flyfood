@@ -6,10 +6,7 @@ NOME_ARQUIVO_PADRAO = "matriz.txt"
 PONTO_INICIO_PADRAO = "R"
 
 
-def carregar_matriz_flyfood(
-    caminho_arquivo: Path | str = NOME_ARQUIVO_PADRAO,
-    ponto_inicio: str = PONTO_INICIO_PADRAO,
-):
+def carregar_matriz_flyfood(caminho_arquivo: Path | str = NOME_ARQUIVO_PADRAO, ponto_inicio: str = PONTO_INICIO_PADRAO):
     """Lê uma matriz FlyFood e calcula as distâncias de Manhattan.
 
     A leitura aceita os dois formatos usados nas instâncias do projeto:

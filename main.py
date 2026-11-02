@@ -41,6 +41,7 @@ def _configurar_problema(opcao):
 
 
 def _calcular_custo(rota, configuracao):
+    """Calcula o custo de uma rota, considerando a configuração do problema."""
     rota_convertida = configuracao["converter_rota"](rota)
     if configuracao["nome"] == "FLYFOOD":
         return configuracao["custo"](rota_convertida, configuracao["distancias"], ponto_inicio)
@@ -71,6 +72,7 @@ def crossover_func(parents, offspring_size, ga_instance):
 
 
 def _criar_mutacao(qtde_cidades):
+    """Closure para criar uma função de mutação que inverte segmentos e troca cidades."""
     def mutation_func(offspring, ga_instance):
         for individuo in offspring:
             if random.random() < TAXA_MUTACAO:
@@ -90,6 +92,7 @@ def _criar_mutacao(qtde_cidades):
 
 
 def _criar_fitness(configuracao):
+    """Closure para criar uma função de fitness que calcula o custo da rota."""
     def fitness_func(ga_instance, solution, solution_idx):
         custo = _calcular_custo(solution, configuracao)
         return 1.0 / 1e-6 if custo == 0 else 1.0 / custo
@@ -149,6 +152,7 @@ def executar_ag(configuracao):
     return rota_ga, custo_ga, rota_2opt, custo_2opt
 
 def selecionar_problema():
+    """Seleciona o problema a ser resolvido: Brasil58 ou FlyFood."""
     while True:
         print("\nEscolha o problema que deseja resolver:")
         print("1 - Brasil58")
@@ -160,6 +164,7 @@ def selecionar_problema():
         print("Opção inválida. Digite 1 ou 2.")
 
 def exibir_resultado(configuracao, resultado):
+    """Exibe o resultado obtido pelo algoritmo genético e pela otimização 2-Opt."""
     rota_ga, custo_ga, rota_2opt, custo_2opt = resultado
     ganho_perc = ((custo_ga - custo_2opt) / custo_ga) * 100 if custo_ga else 0
     print("=" * 120)
@@ -170,8 +175,14 @@ def exibir_resultado(configuracao, resultado):
     print(f"2. Custo final otimizado (2-Opt)    : {custo_2opt:.2f}")
     print(f"   -> Redução de custo pelo 2-Opt: {ganho_perc:.2f}%")
     print("-" * 120)
-    print(f"Rota inicial do AG:\n{' -> '.join(map(str, rota_ga))}")
-    print(f"Rota otimizada final:\n{' -> '.join(map(str, rota_2opt))}")
+    if configuracao["nome"] == "FLYFOOD":
+        print(f"Rota inicial do AG:\n R -> {' -> '.join(map(str, rota_ga))} -> R")
+        print(f"Rota otimizada final:\n R -> {' -> '.join(map(str, rota_2opt))} -> R")
+
+    else:
+        print(f"Rota inicial do AG:\n{' -> '.join(map(str, rota_ga))}")
+        print(f"Rota otimizada final:\n{' -> '.join(map(str, rota_2opt))}")
+    
     print("=" * 120)
 
 if __name__ == "__main__":
