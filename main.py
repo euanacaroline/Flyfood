@@ -6,9 +6,9 @@ from lerBrasil58 import custoCaminho, distancias, inicializaPopulacao
 from lerFlyfood import custoCaminhoFlyfood, distancias_flyfood, inicializaPopulacaoFlyfood, ponto_inicio, pontos_entrega
 
 TAMANHO_POPULACAO = 200
-GERACOES = 2500
+GERACOES = 2000
 TAXA_CROSSOVER = 0.85
-TAXA_MUTACAO = 0.15
+TAXA_MUTACAO = 0.20
 NUMERO_PAIS_REPRODUZINDO = 100
 TAMANHO_TORNEIO = 2
 
@@ -21,7 +21,7 @@ def _configurar_problema(opcao):
             "qtde_cidades": qtde_cidades,
             "distancias": distancias,
             "custo": custoCaminho,
-            "populacao": inicializaPopulacao(TAMANHO_POPULACAO, qtde_cidades),
+            "populacao": numpy.array(inicializaPopulacao(TAMANHO_POPULACAO, qtde_cidades), dtype=int),
             "gene_space": list(range(1, qtde_cidades + 1)),
             "converter_rota": lambda rota: [int(cidade) for cidade in rota],
         }
@@ -33,7 +33,7 @@ def _configurar_problema(opcao):
             "qtde_cidades": qtde_cidades,
             "distancias": distancias_flyfood,
             "custo": custoCaminhoFlyfood,
-            "populacao": inicializaPopulacaoFlyfood(TAMANHO_POPULACAO, list(range(qtde_cidades))),
+            "populacao": numpy.array(inicializaPopulacaoFlyfood(TAMANHO_POPULACAO, list(range(qtde_cidades))), dtype=int),
             "gene_space": list(range(qtde_cidades)),
             "converter_rota": lambda rota: [pontos_entrega[int(indice)] for indice in rota],
         }
@@ -101,6 +101,43 @@ def _criar_fitness(configuracao):
     return fitness_func
 
 
+def _criar_selecao_sobreviventes(configuracao, fitness_func):
+    populacao_anterior = numpy.asarray(configuracao["populacao"], dtype=int).copy()
+
+    def selecionar_sobreviventes(ga_instance):
+        nonlocal populacao_anterior
+
+        descendentes = ga_instance.last_generation_offspring_mutation
+
+        nova_populacao = numpy.asarray(populacao_anterior, dtype=int).copy()
+        
+        fitness_populacao = numpy.array([
+            fitness_func(ga_instance, individuo, i)
+            for i, individuo in enumerate(nova_populacao)
+        ])
+        
+        for i, descendente in enumerate(descendentes):
+
+            fitness_descendente = fitness_func(
+                ga_instance, descendente, i
+            )
+
+            pior_indice = numpy.argmin(fitness_populacao)
+        
+            if fitness_descendente > fitness_populacao[pior_indice]:
+
+                nova_populacao[pior_indice] = numpy.asarray(descendente, dtype=int).copy()
+
+                fitness_populacao[pior_indice] = fitness_descendente
+        
+        ga_instance.population = numpy.asarray(nova_populacao, dtype=int)
+        
+        ga_instance.last_generation_fitness = fitness_populacao
+
+        populacao_anterior = numpy.asarray(nova_populacao, dtype=int).copy()
+
+    return selecionar_sobreviventes
+
 def algoritmo_2opt(rota, dic_distancias):
     """Busca local 2-Opt para uma rota com cidades inteiras ou rotuladas."""
     melhor_rota = list(rota)
@@ -128,11 +165,14 @@ def algoritmo_2opt(rota, dic_distancias):
 
 def executar_ag(configuracao):
     """Executa o algoritmo genético para a configuração selecionada."""
+    fitness_func = _criar_fitness(configuracao)
+    selecionar_sobreviventes = _criar_selecao_sobreviventes(configuracao, fitness_func)
+
     ga_instance = pygad.GA(
         num_generations=GERACOES,
         num_parents_mating=NUMERO_PAIS_REPRODUZINDO,
         initial_population=configuracao["populacao"],
-        fitness_func=_criar_fitness(configuracao),
+        fitness_func=fitness_func,
         crossover_type=crossover_func,
         crossover_probability=TAXA_CROSSOVER,
         mutation_type=_criar_mutacao(configuracao["qtde_cidades"]),
@@ -141,7 +181,11 @@ def executar_ag(configuracao):
         gene_type=int,
         gene_space=configuracao["gene_space"],
         allow_duplicate_genes=False,
-        keep_elitism=100,
+
+        keep_elitism=0,
+        keep_parents=0,
+
+        on_generation=selecionar_sobreviventes,
     )
 
     ga_instance.run()
