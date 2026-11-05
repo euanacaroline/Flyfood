@@ -1,5 +1,4 @@
 from pathlib import Path
-import random
 
 QTDE_CIDADES = 58
 
@@ -35,35 +34,3 @@ def ler_distancias(caminho_arquivo: Path, qtde_cidades: int = QTDE_CIDADES):
 diretorio_script = Path(__file__).parent
 caminho_arquivo = diretorio_script / "edgesbrasil58.tsp"
 distancias = ler_distancias(caminho_arquivo)
-
-def custoCaminho(permutacao, dicDistancias):
-    """Calcula o custo total de um circuito fechado (retornando à cidade de origem)."""
-    n = len(permutacao)
-    if n < 2:
-        raise ValueError("A rota deve conter pelo menos duas cidades.")
-
-    soma = 0
-    for i in range(n):
-        a = int(permutacao[i])
-        b = int(permutacao[(i + 1) % n])  # Fecha o ciclo no último elemento
-        
-        try:
-            soma += dicDistancias[(a, b)]
-        except KeyError as erro:
-            raise ValueError(f"A aresta ({a}, {b}) não existe no dicionário.") from erro
-
-    return soma
-
-def inicializaPopulacao(tamanho, qtdeCidades):
-    """Gera uma população inicial com permutações de 1 até qtdeCidades."""
-    populacao = []
-    base_cidades = list(range(1, qtdeCidades + 1))
-    for _ in range(tamanho):
-        individuo = base_cidades.copy()
-        random.shuffle(individuo)
-        populacao.append(individuo)
-    return populacao
-
-def calculaAptidao(populacao, dicDistancias):
-    """Retorna uma lista de custos para a população fornecida."""
-    return [custoCaminho(elem, dicDistancias) for elem in populacao]

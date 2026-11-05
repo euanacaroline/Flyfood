@@ -1,10 +1,7 @@
 from pathlib import Path
-import random
-
 
 NOME_ARQUIVO_PADRAO = "matriz.txt"
 PONTO_INICIO_PADRAO = "R"
-
 
 def carregar_matriz_flyfood(caminho_arquivo: Path | str = NOME_ARQUIVO_PADRAO, ponto_inicio: str = PONTO_INICIO_PADRAO):
     """Lê uma matriz FlyFood e calcula as distâncias de Manhattan.
@@ -86,33 +83,6 @@ def _ler_dimensoes(primeira_linha):
         raise ValueError("As dimensões da matriz devem ser positivas.")
     return dimensoes
 
-
-def custoCaminhoFlyfood(rota, dic_distancias, ponto_inicio=PONTO_INICIO_PADRAO):
-    """Calcula o custo de uma rota fechada, saindo e retornando ao início."""
-    rota_completa = [ponto_inicio] + list(rota) + [ponto_inicio]
-    custo = 0
-    for ponto_atual, proximo_ponto in zip(rota_completa, rota_completa[1:]):
-        try:
-            custo += dic_distancias[(ponto_atual, proximo_ponto)]
-        except KeyError as erro:
-            raise ValueError(
-                f"A aresta ({ponto_atual}, {proximo_ponto}) não existe."
-            ) from erro
-    return custo
-
-
-def inicializaPopulacaoFlyfood(tamanho_pop, lista_pontos):
-    """Gera uma população inicial com permutações dos pontos de entrega."""
-    populacao = []
-    for _ in range(tamanho_pop):
-        individuo = list(lista_pontos)
-        random.shuffle(individuo)
-        populacao.append(individuo)
-    return populacao
-
-
 diretorio_script = Path(__file__).parent
 caminho_arquivo = diretorio_script / NOME_ARQUIVO_PADRAO
-distancias_flyfood, pontos_entrega, ponto_inicio = carregar_matriz_flyfood(
-    caminho_arquivo
-)
+distancias_flyfood, pontos_entrega, ponto_inicio = carregar_matriz_flyfood(caminho_arquivo)
