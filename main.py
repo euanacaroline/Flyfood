@@ -130,7 +130,7 @@ def executar_ag(configuracao):
         else:
             geracoes_sem_melhoria += 1
 
-        if geracoes_sem_melhoria >= proxima_ativacao_2opt:
+        if geracoes_sem_melhoria >= proxima_ativacao_2opt and geracoes_sem_melhoria < LIMITE_ESTAGNACAO:
             print(f"Estagnação de {geracoes_sem_melhoria} gerações. | Aplicando 2-opt em {QUANTIDADE_2OPT} indivíduos...")
             individuos_refinados = refinar_populacao(populacao)
             melhores_individuos.update(individuos_refinados)
@@ -145,12 +145,12 @@ def executar_ag(configuracao):
             else:
                 proxima_ativacao_2opt += INTERVALO_2OPT
 
-        if geracao % INTERVALO_REGISTRO == 0:
-            print(f"Geração {geracao:5d} | Melhor custo: {1 / melhor_aptidao:.0f} | Estagnação: {geracoes_sem_melhoria}")
-
-        if geracoes_sem_melhoria >= LIMITE_ESTAGNACAO:
+        elif geracoes_sem_melhoria >= LIMITE_ESTAGNACAO:
             print(f"\nParada por estagnação na geração {geracao}.")
             break
+
+        if geracao % INTERVALO_REGISTRO == 0:
+            print(f"Geração {geracao:5d} | Melhor custo: {1 / melhor_aptidao:.0f} | Estagnação: {geracoes_sem_melhoria}")
 
     melhor_rota = min((algoritmo_2opt(converter_individuo_para_rota(individuo), matriz_distancias) for individuo in melhores_individuos), key=lambda rota: custo_tour(rota, matriz_distancias))
     return ([lista_genes[indice_gene] for indice_gene in melhores_individuos[0]], 1 / melhores_individuos[0].fitness.values[0],
