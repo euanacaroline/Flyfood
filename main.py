@@ -7,12 +7,14 @@ from lerFlyfood import distancias_flyfood, ponto_inicio, pontos_entrega
 TAMANHO_POPULACAO = 200
 NUMERO_GERACOES = 5000
 TAXA_CROSSOVER = 0.85 
-TAXA_MUTACAO = 0.12
+TAXA_MUTACAO = 0.15
 NUMERO_PAIS_REPRODUZINDO = 100
 TAMANHO_TORNEIO = 2
 ELITISMO = 1
-LIMITE_ESTAGNACAO = 1500
-TAMANHO_LISTA_MELHORES = 10
+LIMITE_ESTAGNACAO = 3000
+INTERVALO_2OPT = 1000
+QUANTIDADE_2OPT = 10
+TAMANHO_LISTA_MELHORES = 100
 INTERVALO_REGISTRO = 100
 PROBLEMAS = {
     "1": {
@@ -87,16 +89,31 @@ def executar_ag(configuracao):
     toolbox.register("select_survivors", lambda populacao_candidata, tamanho_populacao: tools.selBest(populacao_candidata, ELITISMO) + tools.selStochasticUniversalSampling(populacao_candidata, tamanho_populacao - ELITISMO))
 
     def avaliar(lista_individuos):
+        """Avalia a aptidão de indivíduos inválidos."""
         individuos_invalidos = [individuo for individuo in lista_individuos if not individuo.fitness.valid]
         for individuo, aptidao in zip(individuos_invalidos, map(toolbox.evaluate, individuos_invalidos)):
             individuo.fitness.values = aptidao
 
+    def refinar_populacao(populacao):
+        """Aplica 2-opt em indivíduos aleatórios da população."""
+        individuos_selecionados = random.sample(populacao, min(QUANTIDADE_2OPT, len(populacao)))
+        individuos_refinados = []
+        for individuo in individuos_selecionados:
+            rota = converter_individuo_para_rota(individuo)
+            rota_refinada = algoritmo_2opt(rota, matriz_distancias)
+            genes_refinados = [no - deslocamento for no in rota_refinada[deslocamento:]]
+            individuo_refinado = creator.Individual(genes_refinados)
+            individuos_refinados.append(individuo_refinado)
+
+        avaliar(individuos_refinados)
+        return individuos_refinados
+
     populacao = toolbox.population(n=TAMANHO_POPULACAO)
     avaliar(populacao)
-
     melhores_individuos = tools.HallOfFame(TAMANHO_LISTA_MELHORES)
     melhores_individuos.update(populacao)
     melhor_aptidao, geracoes_sem_melhoria = melhores_individuos[0].fitness.values[0], 0
+    proxima_ativacao_2opt = INTERVALO_2OPT
 
     for geracao in range(1, NUMERO_GERACOES + 1):
         pais = toolbox.select_parents(populacao, NUMERO_PAIS_REPRODUZINDO)
@@ -104,34 +121,47 @@ def executar_ag(configuracao):
         avaliar(descendentes)
         melhores_individuos.update(descendentes)
         populacao = toolbox.select_survivors(populacao + descendentes, TAMANHO_POPULACAO)
-
         aptidao_atual = melhores_individuos[0].fitness.values[0]
-        geracoes_sem_melhoria = 0 if aptidao_atual > melhor_aptidao else geracoes_sem_melhoria + 1
-        melhor_aptidao = aptidao_atual
-        if geracao % INTERVALO_REGISTRO == 0:
-            print(f"Geração {geracao:5d} | melhor custo: {1 / melhor_aptidao:.0f}")
+        if aptidao_atual > melhor_aptidao:
+            melhor_aptidao = aptidao_atual
+            geracoes_sem_melhoria = 0
+            proxima_ativacao_2opt = INTERVALO_2OPT
 
-        if LIMITE_ESTAGNACAO and geracoes_sem_melhoria >= LIMITE_ESTAGNACAO:
-            print(f"Parada por estagnação na geração {geracao}.")
+        else:
+            geracoes_sem_melhoria += 1
+
+        if geracoes_sem_melhoria >= proxima_ativacao_2opt:
+            print(f"Estagnação de {geracoes_sem_melhoria} gerações. | Aplicando 2-opt em {QUANTIDADE_2OPT} indivíduos...")
+            individuos_refinados = refinar_populacao(populacao)
+            melhores_individuos.update(individuos_refinados)
+            populacao = toolbox.select_survivors(populacao + individuos_refinados, TAMANHO_POPULACAO)
+            aptidao_atual = melhores_individuos[0].fitness.values[0]
+
+            if aptidao_atual > melhor_aptidao:
+                melhor_aptidao = aptidao_atual
+                geracoes_sem_melhoria = 0
+                proxima_ativacao_2opt = INTERVALO_2OPT
+
+            else:
+                proxima_ativacao_2opt += INTERVALO_2OPT
+
+        if geracao % INTERVALO_REGISTRO == 0:
+            print(f"Geração {geracao:5d} | Melhor custo: {1 / melhor_aptidao:.0f} | Estagnação: {geracoes_sem_melhoria}")
+
+        if geracoes_sem_melhoria >= LIMITE_ESTAGNACAO:
+            print(f"\nParada por estagnação na geração {geracao}.")
             break
 
-    melhor_rota = min(
-        (algoritmo_2opt(converter_individuo_para_rota(individuo), matriz_distancias) for individuo in melhores_individuos),
-        key=lambda rota: custo_tour(rota, matriz_distancias),
-    )
-    return (
-        [lista_genes[indice_gene] for indice_gene in melhores_individuos[0]],
-        1 / melhores_individuos[0].fitness.values[0],
-        [lista_nos[indice_no] for indice_no in melhor_rota[deslocamento:]],
-        custo_tour(melhor_rota, matriz_distancias),
-    )
+    melhor_rota = min((algoritmo_2opt(converter_individuo_para_rota(individuo), matriz_distancias) for individuo in melhores_individuos), key=lambda rota: custo_tour(rota, matriz_distancias))
+    return ([lista_genes[indice_gene] for indice_gene in melhores_individuos[0]], 1 / melhores_individuos[0].fitness.values[0],
+        [lista_nos[indice_no] for indice_no in melhor_rota[deslocamento:]], custo_tour(melhor_rota, matriz_distancias))
 
 def exibir_resultado(configuracao, resultado, tempo_total):
+    """Exibe o resultado do algoritmo genético e do refinamento 2-opt."""
     rota_algoritmo_genetico, custo_algoritmo_genetico, rota_refinada, custo_refinado = resultado
     ponto_inicio = configuracao["inicio"]
     prefixo, sufixo = (f"{ponto_inicio} -> ", f" -> {ponto_inicio}") if ponto_inicio else ("", "")
     ganho = (custo_algoritmo_genetico - custo_refinado) / custo_algoritmo_genetico * 100 if custo_algoritmo_genetico else 0
-    
     print("=" * 120, f"RESULTADO COMPARATIVO - {configuracao['nome']}".center(120), "=" * 120,
           f"Quantidade de cidades/pontos: {len(configuracao['genes'])}",
           f"1. Custo de saída do AG (memético) : {custo_algoritmo_genetico:.2f}",
