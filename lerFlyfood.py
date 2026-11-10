@@ -4,13 +4,7 @@ NOME_ARQUIVO_PADRAO = "matriz.txt"
 PONTO_INICIO_PADRAO = "R"
 
 def carregar_matriz_flyfood(caminho_arquivo: Path | str = NOME_ARQUIVO_PADRAO, ponto_inicio: str = PONTO_INICIO_PADRAO):
-    """Lê uma matriz FlyFood e calcula as distâncias de Manhattan.
-
-    A leitura aceita os dois formatos usados nas instâncias do projeto:
-    com a primeira linha contendo ``linhas colunas`` ou sem esse cabeçalho.
-    Células com ``0`` representam espaços vazios; qualquer outro valor é
-    considerado um ponto identificado por seu rótulo.
-    """
+    """Lê uma matriz FlyFood e calcula as distâncias de Manhattan."""
     caminho = Path(caminho_arquivo)
     if not caminho.is_absolute():
         caminho = Path(__file__).parent / caminho
